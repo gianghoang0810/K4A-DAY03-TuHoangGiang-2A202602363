@@ -1,7 +1,7 @@
 # 📊 BÁO CÁO THU HOẠCH NGHIỆM THU BÀI LAB 3 (BƯỚC 3 — SUBMISSION ARTIFACT)
 
-> **Họ và Tên Học viên:** [Điền Họ và Tên]  
-> **Mã Sinh Viên / Mã Học viên:** [Điền MSSV]  
+> **Họ và Tên Học viên:** TỪ HOÀNG GIANG
+> **Mã Sinh Viên / Mã Học viên:** 2A202602363 
 > **Chủ đề Lựa chọn:** [Điền tên chủ đề đã chọn từ docs/DANH_SACH_DE_TAI.md hoặc Đề tài Mở]  
 
 ---
@@ -10,11 +10,11 @@
 
 | Tiêu chí Đánh giá | Mức độ (1 - 5) | Giải trình chi tiết lý do chọn điểm |
 | :--- | :---: | :--- |
-| **1. Multi-step Reasoning** | / 5 | Bài toán có yêu cầu chia nhỏ nhiều bước suy luận nối tiếp nhau không? |
-| **2. Tool Interaction** | / 5 | Hệ thống có cần kết nối với MCP Server / Cơ sở dữ liệu bên ngoài không? |
-| **3. Dynamic Decision** | / 5 | Bước tiếp theo có phụ thuộc vào kết quả quan sát bước trước không? |
-| **4. Long Horizon Goal** | / 5 | Hệ thống có phải giữ mục tiêu xuyên suốt qua nhiều lượt xử lý không? |
-| **TỔNG ĐIỂM AGENTIC FIT** | **/ 20** | *Nếu tổng điểm > 12/20: Bài toán rất phù hợp triển khai Agentic System.* |
+| **1. Multi-step Reasoning** | 5/ 5 | Cần xử lý nhiều bước: phân tích case → xác định lỗi → tra guideline → tìm case tương tự → đánh giá mức độ → đề xuất xử lý → tạo Rework. |
+| **2. Tool Interaction** | 5/ 5 |  Cần kết nối Database/API/MCP để lấy dữ liệu annotation, lịch sử QC, guideline, tìm case tương tự và tạo Rework Ticket.  |
+| **3. Dynamic Decision** | 5/ 5 | Bước tiếp theo phụ thuộc kết quả trước đó: phân biệt lỗi 2D/3D, PASS/FAIL, mức độ lỗi và độ tin cậy để quyết định xử lý hoặc yêu cầu QC xác nhận. |
+| **4. Long Horizon Goal** | 2/ 5 | Một case thường được xử lý trong thời gian ngắn. Nếu Agent theo dõi toàn bộ vòng đời Rework → sửa → QC lại → đóng case thì mức độ này sẽ cao hơn. |
+| **TỔNG ĐIỂM AGENTIC FIT** | **17/ 20** | *Bài toán rất phù hợp triển khai Agentic System**, đặc biệt nhờ khả năng suy luận nhiều bước, sử dụng nhiều công cụ và tự quyết định hành động tiếp theo.* |
 
 ---
 

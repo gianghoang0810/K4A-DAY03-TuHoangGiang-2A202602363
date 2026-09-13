@@ -1,112 +1,119 @@
 """
 🛠️ TOOL DEFINITIONS & EXECUTION BACKEND
-Mã nguồn chứa danh sách Tool Schemas (JSON Schema) và Execution Layer phục vụ cho MCP Server.
+Mã nguồn chứa danh sách Tool Schemas (JSON Schema) và Execution Layer
+phục vụ cho MCP Server của QC Assistant.
 """
 
 import json
 from typing import Dict, Any
 
 # ==============================================================================
-# 1. KHAI BÁO TOOL SCHEMAS CHUẨN NATIVE JSON SCHEMA (TASK 1.2)
+# 1. KHAI BÁO TOOL SCHEMAS
 # ==============================================================================
 
 TOOLS_SCHEMA = [
-    # Tool 1: Đã được định nghĩa mẫu sẵn cho Học viên tham khảo
     {
-        "name": "academic_query",
-        "description": "Tra cứu hồ sơ và thông tin học vụ của sinh viên VinUni bằng mã sinh viên.",
+        "name": "qc_case_query",
+        "description": "Tra cứu thông tin ca lỗi gán nhãn 2D/3D bằng mã QC Case.",
         "parameters": {
             "type": "object",
             "properties": {
-                "student_id": {
+                "case_id": {
                     "type": "string",
-                    "description": "Mã sinh viên cần tra cứu (ví dụ: 'SV2026001')"
+                    "description": "Mã QC Case cần tra cứu, ví dụ: 'CASE-1001'"
                 }
             },
-            "required": ["student_id"]
+            "required": ["case_id"]
         }
     },
-    
-    # --------------------------------------------------------------------------
-    # TODO 1.2: HỌC VIÊN HOÀN THIỆN TOOL SCHEMA CHO 'schedule_appointment'
-    # 🎯 YÊU CẦU THIẾT KẾ SCHEMA (JSON SCHEMA STANDARD):
-    # 1. Tool dùng để đặt lịch hẹn tư vấn học vụ với Cố vấn học tập VinUni.
-    # 2. Thiết kế các tham số (properties) để LLM trích xuất:
-    #    - student_id (string): Mã sinh viên cần đặt lịch (ví dụ: 'SV2026001')
-    #    - datetime_str (string): Thời gian hẹn (ví dụ: '14:00 15/09/2026')
-    #    - advisor_name (string): Tên cố vấn học tập
-    # 3. Khai báo danh sách các trường bắt buộc (required).
-    # --------------------------------------------------------------------------
+
     {
-        "name": "schedule_appointment",
-        "description": "Đặt lịch hẹn tư vấn học vụ với Cố vấn học tập VinUni.",
+        "name": "create_rework_ticket",
+        "description": "Tạo phiếu Rework cho ca gán nhãn 2D/3D bị lỗi.",
         "parameters": {
             "type": "object",
             "properties": {
-                # TODO 1.2: Khai báo các thuộc tính tham số cho Tool tại đây...
+                "case_id": {
+                    "type": "string",
+                    "description": "Mã QC Case cần tạo Rework"
+                },
+                "error_type": {
+                    "type": "string",
+                    "description": "Loại lỗi, ví dụ: 'BBOX_MISALIGNED'"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Mô tả lỗi cần sửa"
+                }
             },
-            "required": [] # TODO 1.2: Khai báo danh sách các trường bắt buộc tại đây...
+            "required": ["case_id", "error_type", "description"]
         }
     }
 ]
 
 # ==============================================================================
-# 2. MÔ PHỎNG DỮ LIỆU & HÀM THỰC THI TOOL (EXECUTION LAYER)
+# 2. MOCK DATABASE & EXECUTION LAYER
 # ==============================================================================
 
 MOCK_DATABASE = {
-    "SV2026001": {
-        "full_name": "Nguyễn Văn An",
-        "class": "AI-K4",
-        "gpa": 3.85,
-        "email": "an.nv@vinuni.edu.vn",
-        "status": "Đang học",
-        "advisor": "PGS.TS Nguyễn Văn A"
+    "CASE-1001": {
+        "annotation_type": "3D",
+        "object_class": "Car",
+        "error_type": "CUBOID_MISALIGNED",
+        "description": "3D Cuboid lệch so với Point Cloud.",
+        "annotator": "ANN-001",
+        "status": "QC_FAIL"
     },
-    "SV2026002": {
-        "full_name": "Trần Thị Bình",
-        "class": "AI-K4",
-        "gpa": 3.60,
-        "email": "binh.tt@vinuni.edu.vn",
-        "status": "Đang học",
-        "advisor": "TS. Lê Thị B"
+    "CASE-1002": {
+        "annotation_type": "2D",
+        "object_class": "Pedestrian",
+        "error_type": "BBOX_MISALIGNED",
+        "description": "Bounding Box chưa bao phủ đầy đủ đối tượng.",
+        "annotator": "ANN-002",
+        "status": "QC_FAIL"
     }
 }
 
 
-def execute_academic_query(student_id: str) -> str:
-    """Thực thi tra cứu học vụ theo mã sinh viên"""
-    student = MOCK_DATABASE.get(student_id.strip().upper())
-    if student:
+def execute_qc_case_query(case_id: str) -> str:
+    """Thực thi tra cứu QC Case"""
+    case = MOCK_DATABASE.get(case_id.strip().upper())
+
+    if case:
         return json.dumps({
             "status": "SUCCESS",
-            "student_id": student_id,
-            "data": student
-        }, ensure_ascii=False)
-    else:
-        return json.dumps({
-            "status": "NOT_FOUND",
-            "message": f"Không tìm thấy dữ liệu sinh viên có mã '{student_id}'"
+            "case_id": case_id,
+            "data": case
         }, ensure_ascii=False)
 
+    return json.dumps({
+        "status": "NOT_FOUND",
+        "message": f"Không tìm thấy QC Case '{case_id}'"
+    }, ensure_ascii=False)
 
-def execute_schedule_appointment(student_id: str, datetime_str: str, advisor_name: str = "PGS.TS Nguyễn Văn A") -> str:
-    """Thực thi đặt lịch hẹn tư vấn học vụ"""
+
+def execute_create_rework_ticket(
+    case_id: str,
+    error_type: str,
+    description: str
+) -> str:
+    """Thực thi tạo phiếu Rework"""
     return json.dumps({
         "status": "SUCCESS",
-        "booking_id": f"BK-{student_id}-99",
-        "student_id": student_id,
-        "datetime": datetime_str,
-        "advisor": advisor_name,
-        "message": f"Đặt lịch thành công cho sinh viên {student_id} với {advisor_name} vào lúc {datetime_str}."
+        "rework_id": f"RW-{case_id}-01",
+        "case_id": case_id,
+        "error_type": error_type,
+        "description": description,
+        "message": f"Đã tạo phiếu Rework cho {case_id}."
     }, ensure_ascii=False)
 
 
 # Router gọi tool thực tế
 TOOL_ROUTER = {
-    "academic_query": execute_academic_query,
-    "schedule_appointment": execute_schedule_appointment
+    "qc_case_query": execute_qc_case_query,
+    "create_rework_ticket": execute_create_rework_ticket
 }
+
 
 def dispatch_tool_call(tool_name: str, arguments: Dict[str, Any]) -> str:
     """Hàm trung chuyển thực thi tool"""
@@ -114,5 +121,42 @@ def dispatch_tool_call(tool_name: str, arguments: Dict[str, Any]) -> str:
         try:
             return TOOL_ROUTER[tool_name](**arguments)
         except Exception as e:
-            return json.dumps({"status": "EXECUTION_ERROR", "error": str(e)}, ensure_ascii=False)
-    return json.dumps({"status": "UNKNOWN_TOOL", "error": f"Tool '{tool_name}' không tồn tại!"}, ensure_ascii=False)
+            return json.dumps({
+                "status": "EXECUTION_ERROR",
+                "error": str(e)
+            }, ensure_ascii=False)
+
+    return json.dumps({
+        "status": "UNKNOWN_TOOL",
+        "error": f"Tool '{tool_name}' không tồn tại!"
+    }, ensure_ascii=False)
+
+
+if __name__ == "__main__":
+    import sys
+
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+
+    if {tool["name"] for tool in TOOLS_SCHEMA} != set(TOOL_ROUTER):
+        raise RuntimeError("Tên tool trong TOOLS_SCHEMA và TOOL_ROUTER không khớp.")
+
+    print(
+        f"[TOOLS CHECK]: Đã đăng ký thành công {len(TOOLS_SCHEMA)} "
+        "Native Tools trong TOOLS_SCHEMA!"
+    )
+
+    test_calls = [
+        ("qc_case_query", {"case_id": "CASE-1001"}),
+        ("create_rework_ticket", {
+            "case_id": "CASE-1001",
+            "error_type": "CUBOID_MISALIGNED",
+            "description": "3D Cuboid lệch so với Point Cloud."
+        })
+    ]
+    for tool_name, arguments in test_calls:
+        result = json.loads(dispatch_tool_call(tool_name, arguments))
+        if result.get("status") != "SUCCESS":
+            raise RuntimeError(f"Gọi thử {tool_name} thất bại: {result}")
+        print(f"Kết quả gọi thử {tool_name}: Status {result['status']}")
+        print(json.dumps(result, ensure_ascii=False, indent=2))

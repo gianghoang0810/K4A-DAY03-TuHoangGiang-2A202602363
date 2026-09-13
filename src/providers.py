@@ -6,6 +6,7 @@ Hỗ trợ Native Tool Calling và chuyển đổi linh hoạt qua biến môi t
 import os
 import sys
 import json
+import re
 from typing import Dict, Any, List
 from dotenv import load_dotenv
 
@@ -32,32 +33,75 @@ class MockOfflineProvider(BaseLLMProvider):
         self.model_name = "Offline-Mock-Model-2026"
 
     def generate(self, prompt: str, system_prompt: str = "") -> str:
-        return f"[Mock Chatbot Response]: Xin chào! Tôi đã nhận được câu hỏi '{prompt}'. (Chế độ Chatbot không có Tool tra cứu dữ liệu thời gian thực)."
+        return "[Mock Chatbot Response]: Tôi hỗ trợ giải thích kiểm định lỗi gán nhãn 2D/3D và quy trình Rework. Chế độ Chatbot không có công cụ tra cứu ca QC hoặc tạo phiếu Rework."
 
     def generate_with_tools(self, prompt: str, tools_schema: List[Dict[str, Any]], system_prompt: str = "") -> Dict[str, Any]:
-        prompt_lower = prompt.lower()
-        
-        # Mô phỏng nhận diện intent gọi Tool
-        if "sv2026001" in prompt_lower and "đặt lịch" in prompt_lower:
-            return {
-                "type": "tool_call",
-                "tool_name": "schedule_appointment",
-                "arguments": {"student_id": "SV2026001", "datetime_str": "14:00 15/09/2026", "advisor_name": "PGS.TS Nguyễn Văn A"},
-                "thought": "Người dùng yêu cầu đặt lịch hẹn tư vấn cho sinh viên SV2026001. Tôi sẽ gọi tool schedule_appointment."
-            }
-        elif "sv2026001" in prompt_lower or "tra cứu" in prompt_lower:
-            return {
-                "type": "tool_call",
-                "tool_name": "academic_query",
-                "arguments": {"student_id": "SV2026001"},
-                "thought": "Người dùng muốn tra cứu thông tin học vụ của sinh viên SV2026001. Tôi sẽ gọi tool academic_query."
-            }
-        else:
-            return {
-                "type": "text",
-                "content": f"[Mock Agent Response]: Xin chào! Quy chế học vụ VinUni yêu cầu sinh viên tích lũy tối thiểu 120 tín chỉ và duy trì GPA trên 2.0 để tốt nghiệp.",
-                "thought": "Câu hỏi chung về quy chế học vụ, trả lời trực tiếp không cần gọi Tool."
-            }
+        # app.py nối từng kết quả Tool vào prompt theo định dạng này.
+        sections = prompt.split("\n\nTool đã gọi: ")
+        question = sections[0]
+        question_lower = question.lower()
+
+        def answer(content):
+            return {"type": "text", "content": f"[Mock Agent Response]: {content}",
+                    "thought": "Mock QC trả lời và kết thúc lượt xử lý."}
+
+        def call(name, arguments):
+            if name not in {tool.get("name") for tool in tools_schema}:
+                return answer(f"Công cụ {name} chưa được cung cấp.")
+            return {"type": "tool_call", "tool_name": name, "arguments": arguments,
+                    "thought": f"Mock QC gọi {name} theo yêu cầu."}
+
+        case_match = re.search(r"\bCASE-\d+\b", question, re.IGNORECASE)
+        wants_rework = bool(re.search(r"tạo\s+(?:một\s+)?(?:phiếu\s+)?rework", question_lower))
+        if "không tạo" in question_lower or "đừng tạo" in question_lower:
+            wants_rework = False
+        description_match = re.search(r"nội dung yêu cầu:\s*(.+)", question, re.IGNORECASE | re.DOTALL)
+        requested_description = description_match.group(1).strip() if description_match else None
+
+        if len(sections) > 1:
+            latest = sections[-1]
+            tool_name = latest.split("\n", 1)[0].strip()
+            try:
+                observation = json.JSONDecoder().raw_decode(latest.split("\nObservation: ", 1)[1])[0]
+                if not isinstance(observation, dict):
+                    raise ValueError("Observation phải là object")
+            except (ValueError, IndexError):
+                return answer("Không đọc được kết quả Tool; vui lòng kiểm tra dữ liệu trả về.")
+            status = observation.get("status")
+            if status == "NOT_FOUND":
+                return answer("Không tìm thấy ca lỗi. Vui lòng kiểm tra lại mã QC Case.")
+            if status != "SUCCESS":
+                return answer(f"Tool không thành công: {json.dumps(observation, ensure_ascii=False)}")
+            if tool_name == "create_rework_ticket":
+                return answer(f"Kết quả tạo phiếu Rework: {json.dumps(observation, ensure_ascii=False)}")
+            data = observation.get("data", {})
+            if tool_name == "qc_case_query" and wants_rework:
+                conditional = "nếu" in question_lower
+                if conditional and ("qc_fail" not in question_lower or data.get("status") != "QC_FAIL"):
+                    return answer(f"Chưa đủ điều kiện tạo Rework. Dữ liệu QC: {json.dumps(data, ensure_ascii=False)}")
+                if not observation.get("case_id") or not data.get("error_type") or not data.get("description"):
+                    return answer("Thiếu mã ca, loại lỗi hoặc mô tả lỗi để tạo Rework; vui lòng bổ sung.")
+                return call("create_rework_ticket", {
+                    "case_id": observation["case_id"],
+                    "error_type": data["error_type"],
+                    "description": requested_description or f"Khắc phục lỗi: {data['description']}"
+                })
+            return answer(f"Kết quả QC: {json.dumps(observation, ensure_ascii=False)}")
+
+        if not case_match:
+            if "tra cứu" in question_lower or wants_rework:
+                if "hỗ trợ" not in question_lower:
+                    return answer("Vui lòng cung cấp mã QC Case dạng CASE-1001.")
+            return answer("Tôi hỗ trợ tra cứu lỗi gán nhãn 2D/3D bằng qc_case_query và tạo phiếu Rework bằng create_rework_ticket với mã ca, loại lỗi và mô tả cần sửa.")
+
+        case_id = case_match.group().upper()
+        error_match = re.search(r"\bloại lỗi\s+([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)\b", question, re.IGNORECASE)
+        if wants_rework and "nếu" not in question_lower and error_match and requested_description:
+            return call("create_rework_ticket", {
+                "case_id": case_id, "error_type": error_match.group(1).upper(),
+                "description": requested_description
+            })
+        return call("qc_case_query", {"case_id": case_id})
 
 
 class GeminiProvider(BaseLLMProvider):

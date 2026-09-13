@@ -1,29 +1,162 @@
 [
   {
     "step": 1,
-    "query": "Chào bạn, bạn có thể giới thiệu quy chế học vụ cơ bản của Đại học VinUni không?",
+    "query": "Chào bạn, Trợ lý Kiểm định Chất lượng có thể hỗ trợ những gì trong việc kiểm tra lỗi gán nhãn 2D/3D và tạo phiếu Rework?",
     "action_type": "FINAL_ANSWER",
-    "thought": "Câu hỏi chung về quy chế học vụ, trả lời trực tiếp không cần gọi Tool.",
-    "output": "[Mock Agent Response]: Xin chào! Quy chế học vụ VinUni yêu cầu sinh viên tích lũy tối thiểu 120 tín chỉ và duy trì GPA trên 2.0 để tốt nghiệp.",
-    "latency_ms": 2845.93
+    "thought": "Gemini phản hồi trực tiếp bằng văn bản (không cần gọi công cụ).",
+    "output": "Chào bạn! Với vai trò là Trợ lý Kiểm định Chất lượng (QC Assistant) cho dữ liệu gán nhãn 2D/3D, tôi có thể hỗ trợ bạn các công việc sau:\n\n1. **Tra cứu thông tin ca lỗi (QC Case):** Kiểm tra chi tiết trạng thái, loại lỗi và mô tả của một ca gán nhãn bằng mã ca (ví dụ: `CASE-1001`).\n2. **Tạo phiếu khắc phục (Rework Ticket):** Lập phiếu yêu cầu chỉnh sửa cho các ca gán nhãn bị lỗi (đặc biệt là các ca có trạng thái `QC_FAIL`), với mô tả hành động khắc phục cụ thể dựa trên lỗi thực tế.\n\nBạn cần tôi hỗ trợ tra cứu ca nào hay tạo phiếu Rework cho trường hợp nào không?",
+    "latency_ms": 11074.98
   },
   {
     "step": 1,
-    "query": "Hãy tra cứu thông tin học vụ của sinh viên SV2026001.",
+    "query": "Hãy tra cứu ca lỗi gán nhãn 2D có mã CASE-1002 và cho tôi biết lớp đối tượng, loại lỗi, mô tả lỗi cùng trạng thái QC.",
     "action_type": "TOOL_EXECUTION",
-    "tool_name": "academic_query",
+    "tool_name": "qc_case_query",
     "arguments": {
-      "student_id": "SV2026001"
+      "case_id": "CASE-1002"
     },
-    "observation": {},
-    "latency_ms": 799.12
+    "observation": {
+      "status": "SUCCESS",
+      "case_id": "CASE-1002",
+      "data": {
+        "annotation_type": "2D",
+        "object_class": "Pedestrian",
+        "error_type": "BBOX_MISALIGNED",
+        "description": "Bounding Box chưa bao phủ đầy đủ đối tượng.",
+        "annotator": "ANN-002",
+        "status": "QC_FAIL"
+      }
+    },
+    "latency_ms": 2632.25
   },
   {
     "step": 2,
-    "query": "Hãy tra cứu thông tin học vụ của sinh viên SV2026001.",
+    "query": "Hãy tra cứu ca lỗi gán nhãn 2D có mã CASE-1002 và cho tôi biết lớp đối tượng, loại lỗi, mô tả lỗi cùng trạng thái QC.",
     "action_type": "FINAL_ANSWER",
-    "thought": "Tổng hợp kết quả từ MCP Server thành công.",
-    "output": "Chưa thể trả lời chi tiết do chưa nhận được dữ liệu từ MCP Server (hãy hoàn thành TODO 2.1).",
-    "latency_ms": 10.0
+    "thought": "Gemini phản hồi trực tiếp bằng văn bản (không cần gọi công cụ).",
+    "output": "Dựa trên kết quả tra cứu ca QC `CASE-1002`, thông tin chi tiết như sau:\n\n- **Loại gán nhãn:** 2D\n- **Lớp đối tượng:** Pedestrian (Người đi bộ)\n- **Loại lỗi:** BBOX_MISALIGNED\n- **Mô tả lỗi:** Bounding Box chưa bao phủ đầy đủ đối tượng.\n- **Trạng thái QC:** QC_FAIL",
+    "latency_ms": 3397.23
+  },
+  {
+    "step": 1,
+    "query": "Tạo phiếu Rework cho ca CASE-1002 với loại lỗi BBOX_MISALIGNED. Nội dung yêu cầu: chỉnh lại bounding box 2D để bao sát đối tượng, sau đó kiểm tra lại nhãn lớp.",
+    "action_type": "TOOL_EXECUTION",
+    "tool_name": "qc_case_query",
+    "arguments": {
+      "case_id": "CASE-1002"
+    },
+    "observation": {
+      "status": "SUCCESS",
+      "case_id": "CASE-1002",
+      "data": {
+        "annotation_type": "2D",
+        "object_class": "Pedestrian",
+        "error_type": "BBOX_MISALIGNED",
+        "description": "Bounding Box chưa bao phủ đầy đủ đối tượng.",
+        "annotator": "ANN-002",
+        "status": "QC_FAIL"
+      }
+    },
+    "latency_ms": 2037.27
+  },
+  {
+    "step": 2,
+    "query": "Tạo phiếu Rework cho ca CASE-1002 với loại lỗi BBOX_MISALIGNED. Nội dung yêu cầu: chỉnh lại bounding box 2D để bao sát đối tượng, sau đó kiểm tra lại nhãn lớp.",
+    "action_type": "TOOL_EXECUTION",
+    "tool_name": "create_rework_ticket",
+    "arguments": {
+      "case_id": "CASE-1002",
+      "error_type": "BBOX_MISALIGNED",
+      "description": "Chỉnh lại bounding box 2D để bao sát đối tượng, sau đó kiểm tra lại nhãn lớp."
+    },
+    "observation": {
+      "status": "SUCCESS",
+      "rework_id": "RW-CASE-1002-01",
+      "case_id": "CASE-1002",
+      "error_type": "BBOX_MISALIGNED",
+      "description": "Chỉnh lại bounding box 2D để bao sát đối tượng, sau đó kiểm tra lại nhãn lớp.",
+      "message": "Đã tạo phiếu Rework cho CASE-1002."
+    },
+    "latency_ms": 2034.77
+  },
+  {
+    "step": 3,
+    "query": "Tạo phiếu Rework cho ca CASE-1002 với loại lỗi BBOX_MISALIGNED. Nội dung yêu cầu: chỉnh lại bounding box 2D để bao sát đối tượng, sau đó kiểm tra lại nhãn lớp.",
+    "action_type": "FINAL_ANSWER",
+    "thought": "Gemini phản hồi trực tiếp bằng văn bản (không cần gọi công cụ).",
+    "output": "Đã tạo phiếu Rework thành công cho ca **CASE-1002**.\n\n- **Mã phiếu Rework:** `RW-CASE-1002-01`\n- **Loại lỗi:** `BBOX_MISALIGNED`\n- **Nội dung yêu cầu:** Chỉnh lại bounding box 2D để bao sát đối tượng, sau đó kiểm tra lại nhãn lớp.",
+    "latency_ms": 4274.21
+  },
+  {
+    "step": 1,
+    "query": "Hãy tra cứu ca lỗi gán nhãn 3D CASE-1001. Nếu trạng thái QC là QC_FAIL, hãy tạo một phiếu Rework với loại lỗi và nội dung khắc phục dựa trên kết quả vừa tra cứu. Nếu trạng thái khác QC_FAIL thì chỉ thông báo trạng thái hiện tại.",
+    "action_type": "TOOL_EXECUTION",
+    "tool_name": "qc_case_query",
+    "arguments": {
+      "case_id": "CASE-1001"
+    },
+    "observation": {
+      "status": "SUCCESS",
+      "case_id": "CASE-1001",
+      "data": {
+        "annotation_type": "3D",
+        "object_class": "Car",
+        "error_type": "CUBOID_MISALIGNED",
+        "description": "3D Cuboid lệch so với Point Cloud.",
+        "annotator": "ANN-001",
+        "status": "QC_FAIL"
+      }
+    },
+    "latency_ms": 2263.96
+  },
+  {
+    "step": 2,
+    "query": "Hãy tra cứu ca lỗi gán nhãn 3D CASE-1001. Nếu trạng thái QC là QC_FAIL, hãy tạo một phiếu Rework với loại lỗi và nội dung khắc phục dựa trên kết quả vừa tra cứu. Nếu trạng thái khác QC_FAIL thì chỉ thông báo trạng thái hiện tại.",
+    "action_type": "TOOL_EXECUTION",
+    "tool_name": "create_rework_ticket",
+    "arguments": {
+      "description": "Chỉnh 3D Cuboid khớp với Point Cloud.",
+      "case_id": "CASE-1001",
+      "error_type": "CUBOID_MISALIGNED"
+    },
+    "observation": {
+      "status": "SUCCESS",
+      "rework_id": "RW-CASE-1001-01",
+      "case_id": "CASE-1001",
+      "error_type": "CUBOID_MISALIGNED",
+      "description": "Chỉnh 3D Cuboid khớp với Point Cloud.",
+      "message": "Đã tạo phiếu Rework cho CASE-1001."
+    },
+    "latency_ms": 2100.05
+  },
+  {
+    "step": 3,
+    "query": "Hãy tra cứu ca lỗi gán nhãn 3D CASE-1001. Nếu trạng thái QC là QC_FAIL, hãy tạo một phiếu Rework với loại lỗi và nội dung khắc phục dựa trên kết quả vừa tra cứu. Nếu trạng thái khác QC_FAIL thì chỉ thông báo trạng thái hiện tại.",
+    "action_type": "FINAL_ANSWER",
+    "thought": "Gemini phản hồi trực tiếp bằng văn bản (không cần gọi công cụ).",
+    "output": "Dựa trên kết quả kiểm tra ca lỗi `CASE-1001`, trạng thái QC hiện tại là `QC_FAIL` với lỗi `CUBOID_MISALIGNED` (3D Cuboid lệch so với Point Cloud). \n\nPhiếu Rework đã được tạo thành công:\n- **Mã phiếu Rework:** `RW-CASE-1001-01`\n- **Mã ca QC:** `CASE-1001`\n- **Loại lỗi:** `CUBOID_MISALIGNED`\n- **Mô tả khắc phục:** Chỉnh 3D Cuboid khớp với Point Cloud.",
+    "latency_ms": 2354.77
+  },
+  {
+    "step": 1,
+    "query": "Hãy tra cứu ca lỗi CASE-9999 và cho tôi biết thông tin ca lỗi cùng mã người gán nhãn.",
+    "action_type": "TOOL_EXECUTION",
+    "tool_name": "qc_case_query",
+    "arguments": {
+      "case_id": "CASE-9999"
+    },
+    "observation": {
+      "status": "NOT_FOUND",
+      "message": "Không tìm thấy QC Case 'CASE-9999'"
+    },
+    "latency_ms": 2354.93
+  },
+  {
+    "step": 2,
+    "query": "Hãy tra cứu ca lỗi CASE-9999 và cho tôi biết thông tin ca lỗi cùng mã người gán nhãn.",
+    "action_type": "FINAL_ANSWER",
+    "thought": "Gemini phản hồi trực tiếp bằng văn bản (không cần gọi công cụ).",
+    "output": "Không tìm thấy QC Case 'CASE-9999' trong hệ thống. Vui lòng kiểm tra lại mã ca lỗi và thử lại.",
+    "latency_ms": 2379.43
   }
 ]

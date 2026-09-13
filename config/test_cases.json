@@ -1,0 +1,37 @@
+[
+  {
+    "id": "TC01",
+    "type": "direct_query",
+    "question": "Chào bạn, Trợ lý Kiểm định Chất lượng có thể hỗ trợ những gì trong việc kiểm tra lỗi gán nhãn 2D/3D và tạo phiếu Rework?",
+    "expected_behavior": "Agent giới thiệu các chức năng tra cứu ca lỗi bằng qc_case_query và tạo phiếu Rework bằng create_rework_ticket dựa trên mô tả các Tool được cung cấp; không gọi Tool và không tự đưa ra dữ liệu ca lỗi cụ thể.",
+    "complexity": "Low"
+  },
+  {
+    "id": "TC02",
+    "type": "single_tool_query",
+    "question": "Hãy tra cứu ca lỗi gán nhãn 2D có mã CASE-1002 và cho tôi biết lớp đối tượng, loại lỗi, mô tả lỗi cùng trạng thái QC.",
+    "expected_behavior": "Agent gọi Tool 'qc_case_query' với case_id='CASE-1002', nhận status='SUCCESS' và tóm tắt data: annotation_type='2D', object_class='Pedestrian', error_type='BBOX_MISALIGNED', description='Bounding Box chưa bao phủ đầy đủ đối tượng.', status='QC_FAIL'. Không tạo phiếu Rework khi người dùng chỉ yêu cầu tra cứu.",
+    "complexity": "Medium"
+  },
+  {
+    "id": "TC03",
+    "type": "rework_ticket_creation",
+    "question": "Tạo phiếu Rework cho ca CASE-1002 với loại lỗi BBOX_MISALIGNED. Nội dung yêu cầu: chỉnh lại bounding box 2D để bao sát đối tượng, sau đó kiểm tra lại nhãn lớp.",
+    "expected_behavior": "Agent gọi Tool 'create_rework_ticket' với case_id='CASE-1002', error_type='BBOX_MISALIGNED' và description chứa đầy đủ yêu cầu chỉnh bounding box 2D, kiểm tra lại nhãn lớp. Chỉ xác nhận tạo phiếu thành công khi Tool trả về status='SUCCESS' và sử dụng rework_id='RW-CASE-1002-01' do Tool cung cấp.",
+    "complexity": "Medium"
+  },
+  {
+    "id": "TC04",
+    "type": "multi_step_reasoning",
+    "question": "Hãy tra cứu ca lỗi gán nhãn 3D CASE-1001. Nếu trạng thái QC là QC_FAIL, hãy tạo một phiếu Rework với loại lỗi và nội dung khắc phục dựa trên kết quả vừa tra cứu. Nếu trạng thái khác QC_FAIL thì chỉ thông báo trạng thái hiện tại.",
+    "expected_behavior": "Agent gọi 'qc_case_query' với case_id='CASE-1001' trước. Kết quả có status='SUCCESS', data.status='QC_FAIL', data.error_type='CUBOID_MISALIGNED' và mô tả '3D Cuboid lệch so với Point Cloud.'. Agent tiếp tục gọi 'create_rework_ticket' một lần với case_id='CASE-1001', error_type='CUBOID_MISALIGNED' và description yêu cầu chỉnh 3D Cuboid khớp Point Cloud dựa trên kết quả tra cứu. Chỉ xác nhận sau khi Tool trả về status='SUCCESS', sử dụng rework_id='RW-CASE-1001-01', rồi kết thúc trả lời.",
+    "complexity": "High"
+  },
+  {
+    "id": "TC05",
+    "type": "edge_case_handling",
+    "question": "Hãy tra cứu ca lỗi CASE-9999 và cho tôi biết thông tin ca lỗi cùng mã người gán nhãn.",
+    "expected_behavior": "Với mã CASE-9999 không tồn tại trong dữ liệu mô phỏng, Agent gọi 'qc_case_query' với case_id='CASE-9999', nhận status='NOT_FOUND' và thông báo lịch sự rằng không tìm thấy ca lỗi, đề nghị kiểm tra lại mã. Agent không bịa mã người gán nhãn hoặc thông tin ca lỗi và không gọi Tool tạo phiếu Rework.",
+    "complexity": "Medium"
+  }
+]
